@@ -10,7 +10,7 @@
 
 技术栈
 
-<img alt="Spring Boot 4.1.1" src="https://img.shields.io/badge/Spring%20Boot-4.1.1-6DB33F?style=for-the-badge&logo=springboot&logoColor=white"> <img alt="Java 17" src="https://img.shields.io/badge/Java-17-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white"> <img alt="Apache Kafka" src="https://img.shields.io/badge/Kafka-231F20?style=for-the-badge&logo=apachekafka&logoColor=white"> <img alt="Apache Flink 1.17.2" src="https://img.shields.io/badge/Flink-1.17.2-E6526F?style=for-the-badge&logo=apacheflink&logoColor=white"> <img alt="MySQL" src="https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white"> <img alt="Redis" src="https://img.shields.io/badge/Redis-FF4438?style=for-the-badge&logo=redis&logoColor=white"> <img alt="Hadoop HDFS" src="https://img.shields.io/badge/HDFS-66CCFF?style=for-the-badge&logo=apachehadoop&logoColor=white"> <img alt="Apache Hive" src="https://img.shields.io/badge/Hive-FDEE21?style=for-the-badge&logo=apachehive&logoColor=black"> <img alt="Apache Spark" src="https://img.shields.io/badge/Spark-E25A1C?style=for-the-badge&logo=apachespark&logoColor=white">
+<img alt="Spring Boot 4.1.1" src="https://img.shields.io/badge/Spring%20Boot-4.1.1-6DB33F?style=for-the-badge&logo=springboot&logoColor=white"> <img alt="Java 17" src="https://img.shields.io/badge/Java-17-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white"> <img alt="Apache Kafka" src="https://img.shields.io/badge/Kafka-231F20?style=for-the-badge&logo=apachekafka&logoColor=white"> <img alt="Apache Flink 1.17.2" src="https://img.shields.io/badge/Flink-1.17.2-E6526F?style=for-the-badge&logo=apacheflink&logoColor=white"> <img alt="MySQL" src="https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white"> <img alt="Redis" src="https://img.shields.io/badge/Redis-FF4438?style=for-the-badge&logo=redis&logoColor=white"> <img alt="Hadoop HDFS" src="https://img.shields.io/badge/HDFS-66CCFF?style=for-the-badge&logo=apachehadoop&logoColor=white"> <img alt="Apache Hive" src="https://img.shields.io/badge/Hive-FDEE21?style=for-the-badge&logo=apachehive&logoColor=black"> <img alt="Apache Spark" src="https://img.shields.io/badge/Spark-E25A1C?style=for-the-badge&logo=apachespark&logoColor=white"> <img alt="Docker" src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white">
 
 </div>
 
@@ -589,3 +589,4 @@ curl -X POST http://127.0.0.1:8080/api/meal/record \
 | 存储 | MySQL（明细 + 日汇总）、Redis（热汇总） |
 | 离线数据 | `data/diet_foods_extracted.csv`（NHANES 风格饮食记录） |
 | 数据湖 | 宿舍 Ubuntu 上的 HDFS、Hive、Spark，见 `ubuntu/` |
+| 运行环境 | Docker，用来跑 Kafka、Redis、Flink、HDFS 和 Hive |
