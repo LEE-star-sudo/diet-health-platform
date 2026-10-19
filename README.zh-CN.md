@@ -37,29 +37,33 @@ Ubuntu 侧的配置、拉取脚本和 Hive 表在 [`ubuntu/README.md`](ubuntu/RE
 
 ## 整体架构
 
-```
-客户端 / 测试工具
-        |
-        |  POST /api/meal/record
-        v
-  meal-service (Spring Boot :8080)
-        |
-        |  produce
-        v
-  Kafka: user_meal_event_stream
-        |
-        +--> MealConsumer --> MySQL user_food_intake
-        |
-        +--> NutritionConsumer --> user_food_nutrition + nutrition_outbox
-                                         |
-                                         v
-                           Kafka: user_food_nutrition_stream
-                                         |
-                                         v
-                            NutritionDailySummaryJob
-                               |                 |
-                               v                 v
-                    MySQL user_daily_summary   Redis daily:summary:*
+```mermaid
+flowchart TD
+    phone["手机 / 测试工具"] --> api["POST /api/meal/record"]
+    api --> meal["meal-service<br/>Spring Boot :8080"]
+    meal --> kafka["Kafka<br/>user_meal_event_stream"]
+
+    kafka --> detail["MealConsumer<br/>明细"]
+    kafka --> convert["NutritionConsumer<br/>营养换算"]
+
+    detail --> intake[("MySQL<br/>user_food_intake")]
+
+    convert --> nutrition[("MySQL<br/>user_food_nutrition")]
+    convert --> outbox["nutrition_outbox"]
+    outbox --> kafka2["Kafka<br/>user_food_nutrition_stream"]
+    kafka2 --> flink["Flink<br/>NutritionDailySummaryJob"]
+    flink --> daily[("MySQL<br/>user_daily_summary")]
+    flink --> redis[("Redis<br/>daily:summary")]
+
+    classDef entry fill:#e8f1ff,stroke:#3b82f6,color:#1e3a5f
+    classDef queue fill:#fff4e5,stroke:#d97706,color:#7c4a03
+    classDef calc fill:#fde8ef,stroke:#e6526f,color:#7a2438
+    classDef store fill:#e8f8ef,stroke:#1f9d55,color:#145239
+
+    class phone,api,meal entry
+    class kafka,kafka2 queue
+    class detail,convert,outbox,flink calc
+    class intake,nutrition,daily,redis store
 ```
 
 <a id="zh-layout"></a>
