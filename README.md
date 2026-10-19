@@ -101,19 +101,17 @@ This is the analysis side on the dorm LAN. The host is `192.168.164.128` and the
 
 The configuration stays in the `ubuntu/` directory. The containers that are running use `/home/ccl/flink-cluster` and `/home/ccl/hdfs-cluster`. The copy in this repository does not include NameNode data, the Hive metastore, or logs. The old `kafka_to_hdfs_parquet.sql` and the Flume configuration are not included. Do not submit that old job again.
 
-```text
-ubuntu/
-  flink/jobs/ods_kafka_to_hdfs.sql    subscribe to both Kafka topics and write ODS
-  flink/docker-compose.yml            Flink JobManager and TaskManager
-  flink/docker-compose-hive.yml       HiveServer2
-  flink/hive-entrypoint.sh
-  flink/hadoop-conf/                  core-site, hdfs-site, hive-site
-  hdfs/docker-compose.yml             NameNode
-  hive/lakehouse_full.sql             Hive external tables
-  scripts/sync_full_user_data.py      Spark full overwrite from MySQL
-  scripts/train_bmi_weight_regression.py
-                                      cross-sectional BMI and weight regression from one dietary day; no model has been produced
-```
+| File | What it does |
+|---|---|
+| `ubuntu/flink/jobs/ods_kafka_to_hdfs.sql` | Subscribe to both Kafka topics and write ODS |
+| `ubuntu/flink/docker-compose.yml` | Flink JobManager and TaskManager |
+| `ubuntu/flink/docker-compose-hive.yml` | HiveServer2 |
+| `ubuntu/flink/hive-entrypoint.sh` | Hive startup script |
+| `ubuntu/flink/hadoop-conf/` | core-site, hdfs-site, and hive-site |
+| `ubuntu/hdfs/docker-compose.yml` | NameNode |
+| `ubuntu/hive/lakehouse_full.sql` | Hive external tables |
+| `ubuntu/scripts/sync_full_user_data.py` | Spark full overwrite from MySQL |
+| `ubuntu/scripts/train_bmi_weight_regression.py` | Cross-sectional BMI and weight regression from one dietary day. No model has been produced |
 
 ### Flink: new check-ins land in ODS
 

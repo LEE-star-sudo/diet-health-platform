@@ -101,19 +101,17 @@ flowchart TD
 
 配置仍在 `ubuntu/` 目录。机器上正在跑的容器使用 `/home/ccl/flink-cluster` 和 `/home/ccl/hdfs-cluster`。仓库里这份配置不包含 NameNode 数据、Hive 元数据和日志。旧的 `kafka_to_hdfs_parquet.sql` 和 Flume 配置没有放进来，不要再提交那份旧作业。
 
-```text
-ubuntu/
-  flink/jobs/ods_kafka_to_hdfs.sql    订阅两个 Kafka 主题，写入 ODS
-  flink/docker-compose.yml            Flink JobManager 和 TaskManager
-  flink/docker-compose-hive.yml       HiveServer2
-  flink/hive-entrypoint.sh
-  flink/hadoop-conf/                  core-site、hdfs-site、hive-site
-  hdfs/docker-compose.yml             NameNode
-  hive/lakehouse_full.sql             Hive 外部表
-  scripts/sync_full_user_data.py      Spark 从 MySQL 整表覆盖
-  scripts/train_bmi_weight_regression.py
-                                      用单日饮食做 BMI、体重截面回归，还没有产出模型
-```
+| 文件 | 做什么 |
+|---|---|
+| `ubuntu/flink/jobs/ods_kafka_to_hdfs.sql` | 订阅两个 Kafka 主题，写入 ODS |
+| `ubuntu/flink/docker-compose.yml` | Flink JobManager 和 TaskManager |
+| `ubuntu/flink/docker-compose-hive.yml` | HiveServer2 |
+| `ubuntu/flink/hive-entrypoint.sh` | Hive 启动脚本 |
+| `ubuntu/flink/hadoop-conf/` | core-site、hdfs-site、hive-site |
+| `ubuntu/hdfs/docker-compose.yml` | NameNode |
+| `ubuntu/hive/lakehouse_full.sql` | Hive 外部表 |
+| `ubuntu/scripts/sync_full_user_data.py` | Spark 从 MySQL 整表覆盖 |
+| `ubuntu/scripts/train_bmi_weight_regression.py` | 用一天的饮食做 BMI、体重截面回归，还没有产出模型 |
 
 ### Flink：新打卡进入 ODS
 
