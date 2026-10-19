@@ -1,3 +1,5 @@
+[中文](#数据说明) | [English](#data-notes)
+
 # 数据说明
 
 这里的文件来自美国疾病控制与预防中心（CDC）国家健康统计中心（NCHS）公开发布的 National Health and Nutrition Examination Survey（NHANES，美国国家健康和营养检查调查）。周期是 2021 年 8 月至 2023 年 8 月，文件后缀为 `_L`。
@@ -46,6 +48,8 @@ NHANES 公开数据由美国联邦政府制作，可按 NCHS 的公开数据使�
 FNDDS、FPED、FPID 的电子表格在亚马逊服务器上，用来补食物字典，这次没有放进仓库。
 
 ---
+
+[中文](#数据说明) | [English](#data-notes)
 
 # Data notes
 

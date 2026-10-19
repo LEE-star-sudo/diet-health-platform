@@ -1,3 +1,5 @@
+[中文](#ubuntu-数据湖) | [English](#ubuntu-data-lake)
+
 # Ubuntu 数据湖
 
 这是宿舍内网里的分析侧，主机 `192.168.164.128`，用户 `ccl`。亚马逊服务器上的打卡、营养换算、MySQL 和 Kafka 在仓库根目录。这边只拉取已经算好的结果，不在这里重算营养。
@@ -101,9 +103,9 @@ beeline -u 'jdbc:hive2://127.0.0.1:10000/lakehouse_db' -n ccl
 
 ---
 
-# Ubuntu data lake
+[中文](#ubuntu-数据湖) | [English](#ubuntu-data-lake)
 
-This is the English version of the Chinese document above.
+# Ubuntu data lake
 
 This is the analysis side on the dorm LAN. The host is `192.168.164.128` and the user is `ccl`. Check-in, nutrient conversion, MySQL, and Kafka on the Amazon server are at the repository root. This side only pulls results that have already been calculated. It does not calculate nutrition again.
 

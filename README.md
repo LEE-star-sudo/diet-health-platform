@@ -1,3 +1,5 @@
+[中文](#饮食健康平台) | [English](#diet-health-platform)
+
 # 饮食健康平台
 
 这个仓库是整个项目，包含两台机器。
@@ -452,9 +454,9 @@ curl -X POST http://127.0.0.1:8080/api/meal/record \
 
 ---
 
-# Diet Health Platform
+[中文](#饮食健康平台) | [English](#diet-health-platform)
 
-This is the English version of the Chinese document above.
+# Diet Health Platform
 
 This repository is the whole project and covers two machines.
 
