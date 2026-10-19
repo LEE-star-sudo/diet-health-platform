@@ -1,6 +1,7 @@
 /*
 !/.gitignore
 !/README.md
+!/README.zh-CN.md
 !/start-flink-job.sh
 !/meal-service/
 !/meal-flink-job/
