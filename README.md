@@ -97,7 +97,7 @@ The dorm machine connects out to Amazon. Purple is the data lake: Flink writes n
 
 ## Dorm Ubuntu data lake
 
-This is the analysis side on the dorm LAN. The host is `192.168.164.128` and the user is `ccl`. Amazon cannot connect into the private network, so this machine connects out to `REDACTED_HOST`. It only pulls results that have already been calculated.
+This is the analysis side on the dorm LAN. The host is `192.168.164.128` and the user is `ccl`. Amazon cannot connect into the private network, so this machine connects out. The server's public address is not stored in the repository. It stays in environment variables on the machine that runs the pull. This side only pulls results that have already been calculated.
 
 The configuration stays in the `ubuntu/` directory. The containers that are running use `/home/ccl/flink-cluster` and `/home/ccl/hdfs-cluster`. The copy in this repository does not include NameNode data, the Hive metastore, or logs. The old `kafka_to_hdfs_parquet.sql` and the Flume configuration are not included. Do not submit that old job again.
 
@@ -129,13 +129,14 @@ docker cp ubuntu/flink/jobs/ods_kafka_to_hdfs.sql flink_jobmanager:/tmp/ods_kafk
 docker exec -e TERM=dumb flink_jobmanager ./bin/sql-client.sh -f /tmp/ods_kafka_to_hdfs.sql
 ```
 
-On this machine the live file is `/home/ccl/flink-cluster/jobs/ods_kafka_to_hdfs.sql`. The containers use `restart: always`. A reboot starts an empty cluster and does not submit this SQL again. After the job stops, the next submission again starts at the end of the topic, so messages produced during the downtime are not backfilled.
+The SQL in the repository uses `KAFKA_BOOTSTRAP:9092`. Replace that with the real address on the machine before submitting, and do not commit the public address. The file actually in use on this machine is `/home/ccl/flink-cluster/jobs/ods_kafka_to_hdfs.sql`. The containers use `restart: always`. A reboot starts an empty cluster and does not submit this SQL again. After the job stops, the next submission again starts at the end of the topic, so messages produced during the downtime are not backfilled.
 
 ### Spark: five full tables
 
 Set `MYSQL_PASSWORD` before running. The script does not write `password_hash` into the lake. `user_food_nutrition.timestamp` is stored as `event_time`.
 
 ```bash
+export MYSQL_HOST='database host'
 export MYSQL_PASSWORD='database password'
 HADOOP_CONF_DIR=/usr/local/hadoop/etc/hadoop \
 JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64 \

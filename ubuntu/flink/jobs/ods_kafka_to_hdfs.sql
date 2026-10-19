@@ -19,7 +19,7 @@ CREATE TABLE kafka_meal_event (
 ) WITH (
     'connector' = 'kafka',
     'topic' = 'user_meal_event_stream',
-    'properties.bootstrap.servers' = 'REDACTED_HOST:9092',
+    'properties.bootstrap.servers' = 'KAFKA_BOOTSTRAP:9092',
     'properties.group.id' = 'lakehouse_ods_meal_event_v1',
     'scan.startup.mode' = 'latest-offset',
     'format' = 'json',
@@ -76,7 +76,7 @@ CREATE TABLE kafka_food_nutrition (
 ) WITH (
     'connector' = 'kafka',
     'topic' = 'user_food_nutrition_stream',
-    'properties.bootstrap.servers' = 'REDACTED_HOST:9092',
+    'properties.bootstrap.servers' = 'KAFKA_BOOTSTRAP:9092',
     'properties.group.id' = 'lakehouse_ods_food_nutrition_v1',
     'scan.startup.mode' = 'latest-offset',
     'format' = 'json',

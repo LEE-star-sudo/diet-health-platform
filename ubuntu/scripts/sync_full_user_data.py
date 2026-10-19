@@ -9,7 +9,7 @@ import os
 from pyspark.sql import SparkSession
 
 JDBC_URL = (
-    "jdbc:mysql://REDACTED_HOST:3306/diet_health"
+    "jdbc:mysql://" + os.environ["MYSQL_HOST"] + ":3306/diet_health"
     "?useSSL=false&allowPublicKeyRetrieval=true"
     "&serverTimezone=Asia/Shanghai&zeroDateTimeBehavior=CONVERT_TO_NULL"
 )

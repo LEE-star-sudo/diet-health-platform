@@ -97,7 +97,7 @@ flowchart TD
 
 ## 宿舍 Ubuntu 数据湖
 
-这是宿舍内网里的分析侧，主机 `192.168.164.128`，用户 `ccl`。亚马逊连不进宿舍内网，这台机器主动连接公网 `REDACTED_HOST`。这边只拉取已经算好的结果。
+这是宿舍内网里的分析侧，主机 `192.168.164.128`，用户 `ccl`。亚马逊连不进宿舍内网，这台机器主动连出去拉取。服务器公网地址不写进仓库，只留在运行这台机器的环境变量里。这边只拉取已经算好的结果。
 
 配置仍在 `ubuntu/` 目录。机器上正在跑的容器使用 `/home/ccl/flink-cluster` 和 `/home/ccl/hdfs-cluster`。仓库里这份配置不包含 NameNode 数据、Hive 元数据和日志。旧的 `kafka_to_hdfs_parquet.sql` 和 Flume 配置没有放进来，不要再提交那份旧作业。
 
@@ -129,13 +129,14 @@ docker cp ubuntu/flink/jobs/ods_kafka_to_hdfs.sql flink_jobmanager:/tmp/ods_kafk
 docker exec -e TERM=dumb flink_jobmanager ./bin/sql-client.sh -f /tmp/ods_kafka_to_hdfs.sql
 ```
 
-在这台机器上，源文件的实际路径是 `/home/ccl/flink-cluster/jobs/ods_kafka_to_hdfs.sql`。容器设置了 `restart: always`。开机只会拉起空集群，不会自动再交这份 SQL。作业停了之后，再次提交仍从当时的末尾开始，停机期间的新消息不会补进来。
+仓库里的 SQL 把 Kafka 地址写成 `KAFKA_BOOTSTRAP:9092`。提交前在本机换成真实地址，不要把公网地址提交回来。这台机器上正在使用的文件是 `/home/ccl/flink-cluster/jobs/ods_kafka_to_hdfs.sql`。容器设置了 `restart: always`。开机只会拉起空集群，不会自动再交这份 SQL。作业停了之后，再次提交仍从当时的末尾开始，停机期间的新消息不会补进来。
 
 ### Spark：五张全量表
 
 运行前设置 `MYSQL_PASSWORD`。脚本不把 `password_hash` 写入数据湖。`user_food_nutrition.timestamp` 写入湖时列名是 `event_time`。
 
 ```bash
+export MYSQL_HOST='数据库地址'
 export MYSQL_PASSWORD='数据库密码'
 HADOOP_CONF_DIR=/usr/local/hadoop/etc/hadoop \
 JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64 \
@@ -221,7 +222,7 @@ beeline -u 'jdbc:hive2://127.0.0.1:10000/lakehouse_db' -n ccl
 - **技术栈**：Spring Boot 4.1.1、Java 17、Spring Web、Spring Kafka、Spring Data JPA、MySQL Connector
 - **端口**：`8080`
 - **Kafka**：`localhost:9092`
-- **MySQL**：`jdbc:mysql://localhost:3306/diet_health`（用户 `root` / 密码见 `application.properties`）
+- **MySQL**：`jdbc:mysql://localhost:3306/diet_health`（用户 `root`，密码用环境变量 `MYSQL_PASSWORD`，不写进仓库）
 - **JPA**：`spring.jpa.hibernate.ddl-auto=none`，表需事先建好
 
 #### HTTP 接口
