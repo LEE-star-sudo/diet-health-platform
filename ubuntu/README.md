@@ -97,4 +97,110 @@ beeline -u 'jdbc:hive2://127.0.0.1:10000/lakehouse_db' -n ccl
 | Flink | `flink_jobmanager`、`flink_taskmanager`，页面 `http://127.0.0.1:8081` |
 | HiveServer2 | `hive_server`，端口 `10000` |
 
-调查用的 CSV 和 NHANES 2021–2023 的 XPT 留在机器的 `/home/ccl/data`，不放进这个仓库。
+调查 CSV 和 NHANES 原始 XPT 在仓库的 [`data/`](../data/README.md)。机器上的副本仍在 `/home/ccl/data`。
+
+---
+
+# Ubuntu data lake
+
+This is the English version of the Chinese document above.
+
+This is the analysis side on the dorm LAN. The host is `192.168.164.128` and the user is `ccl`. Check-in, nutrient conversion, MySQL, and Kafka on the Amazon server are at the repository root. This side only pulls results that have already been calculated. It does not calculate nutrition again.
+
+The dorm network is private. Amazon cannot connect in. This machine connects out to `REDACTED_HOST`.
+
+```text
+Phone
+  → Amazon meal-service
+  → Kafka user_meal_event_stream
+       ├→ MySQL user_food_intake
+       └→ converted into user_food_nutrition, then published to user_food_nutrition_stream
+            → Amazon Flink → MySQL user_daily_summary
+
+Dorm Ubuntu
+  Flink SQL: two Kafka topics → two ODS event tables on HDFS
+  Spark: five MySQL tables → five full tables on HDFS (run by hand)
+  Hive: database lakehouse_db, names for those HDFS directories
+```
+
+## Layout
+
+```text
+ubuntu/
+  flink/jobs/ods_kafka_to_hdfs.sql    subscribe to both Kafka topics and write ODS
+  flink/docker-compose.yml            Flink JobManager and TaskManager
+  flink/docker-compose-hive.yml       HiveServer2
+  flink/hive-entrypoint.sh
+  flink/hadoop-conf/                  core-site, hdfs-site, hive-site
+  hdfs/docker-compose.yml             NameNode
+  hive/lakehouse_full.sql             Hive external tables
+  scripts/sync_full_user_data.py      Spark full overwrite from MySQL
+  scripts/train_bmi_weight_regression.py
+                                      cross-sectional BMI and weight regression from one dietary day; no model has been produced
+```
+
+The containers that are running still use `/home/ccl/flink-cluster` and `/home/ccl/hdfs-cluster`. This directory is the same configuration committed to the repository. It does not include NameNode data, the Hive metastore, or logs.
+
+The old `kafka_to_hdfs_parquet.sql` and the Flume configuration are not included. Do not submit that old job again.
+
+## Flink: new check-ins land in ODS
+
+| Kafka topic | Consumer group | HDFS |
+|---|---|---|
+| `user_meal_event_stream` | `lakehouse_ods_meal_event_v1` | `/lakehouse/ods/meal_event` |
+| `user_food_nutrition_stream` | `lakehouse_ods_food_nutrition_v1` | `/lakehouse/ods/food_nutrition_event` |
+
+`scan.startup.mode` is `latest-offset`. Reading starts at the end of the topic at submission time. Messages already in the topic are not written to HDFS.
+
+```bash
+docker cp ubuntu/flink/jobs/ods_kafka_to_hdfs.sql flink_jobmanager:/tmp/ods_kafka_to_hdfs.sql
+docker exec -e TERM=dumb flink_jobmanager ./bin/sql-client.sh -f /tmp/ods_kafka_to_hdfs.sql
+```
+
+On this machine the live file is `/home/ccl/flink-cluster/jobs/ods_kafka_to_hdfs.sql`.
+
+The containers use `restart: always`. A reboot starts an empty cluster and does not submit this SQL again. After the job stops, the next submission again starts at the end of the topic, so messages produced during the downtime are not backfilled.
+
+## Spark: five full tables
+
+Set `MYSQL_PASSWORD` before running. The script does not write `password_hash` into the lake. `user_food_nutrition.timestamp` is stored as `event_time`.
+
+```bash
+export MYSQL_PASSWORD='database password'
+HADOOP_CONF_DIR=/usr/local/hadoop/etc/hadoop \
+JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64 \
+/usr/local/spark/bin/spark-submit --master 'local[2]' --driver-memory 1g \
+  ubuntu/scripts/sync_full_user_data.py
+```
+
+| MySQL | Hive table | HDFS |
+|---|---|---|
+| `user_profile` | `dim_user_profile` | `/lakehouse/dim/user_profile` |
+| `food_nutrition_dict` | `dim_food_nutrition_dict` | `/lakehouse/dim/food_nutrition_dict` |
+| `user_food_intake` | `dwd_user_food_intake` | `/lakehouse/dwd/user_food_intake` |
+| `user_food_nutrition` | `dwd_user_food_nutrition` | `/lakehouse/dwd/user_food_nutrition` |
+| `user_daily_summary` | `dwd_user_daily_summary` | `/lakehouse/dwd/user_daily_summary` |
+
+Profiles and daily summaries have no Kafka topic, so they arrive only through this full-table read. Full analysis should read DIM, DWD, and the daily summary. Do not add ODS and DWD together, or the same meal is counted twice.
+
+One run on 2026-10-14 wrote 3,989 food-dictionary rows and 0 rows in the four user tables, because the user data on Amazon had been cleared. Run the command again after Amazon has the full user data.
+
+## Hive
+
+```bash
+beeline -u 'jdbc:hive2://127.0.0.1:10000/lakehouse_db' -n ccl
+```
+
+Table definitions are in `hive/lakehouse_full.sql`. The contents of `dwd_user_daily_summary` are one person's totals for one day, and the table name stays under `dwd_`. There is no separate DWS or ADS layer.
+
+## Cluster
+
+| Component | Address or container |
+|---|---|
+| HDFS NameNode | `hdfs://192.168.164.128:9000`, container `hdfs_namenode` |
+| DataNode | `node2` (192.168.164.129), `node3` (192.168.164.130), replication 2 |
+| Flink | `flink_jobmanager`, `flink_taskmanager`, UI `http://127.0.0.1:8081` |
+| HiveServer2 | `hive_server`, port `10000` |
+
+The survey CSV and the original NHANES XPT files are in [`data/`](../data/README.md). The copies on this machine remain in `/home/ccl/data`.
+
