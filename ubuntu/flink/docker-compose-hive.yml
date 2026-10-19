@@ -1,0 +1,24 @@
+services:
+  hive-server:
+    image: apache/hive:3.1.3
+    container_name: hive_server
+    restart: always
+    working_dir: /opt/hive/data
+    environment:
+      HIVE_SERVER2_THRIFT_PORT: "10000"
+      SERVICE_NAME: "hiveserver2"
+      HADOOP_CONF_DIR: "/opt/hadoop/etc/hadoop"
+    ports:
+      - "10000:10000"
+      - "10002:10002"
+    extra_hosts:
+      - "node1:192.168.164.128"
+      - "node2:192.168.164.129"
+      - "node3:192.168.164.130"
+    volumes:
+      - ./hive-data:/opt/hive/data
+      - ./hadoop-conf/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
+      - ./hadoop-conf/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
+      - ./hadoop-conf/hive-site.xml:/opt/hive/conf/hive-site.xml:ro
+      - ./hive-entrypoint.sh:/opt/hive-entrypoint.sh:ro
+    entrypoint: ["/bin/bash", "/opt/hive-entrypoint.sh"]

@@ -1,8 +1,10 @@
-# 饮食健康实时数据平台
+# 饮食健康平台
 
-基于 **Spring Boot + Kafka + Apache Flink + MySQL + Redis** 的饮食记录实时采集与日汇总系统。用户通过 HTTP 上报吃了什么和多少克后，同一条 Kafka 事件会走两条链路：进食明细落库，以及按用户、按天做实时聚合。
+这个仓库是整个项目，包含两台机器。
 
-当前工作区是一个多模块工程，不是单一 Maven 父项目。
+亚马逊服务器负责实时链路：用户通过 HTTP 上报吃了什么和多少克，Spring Boot 写入 Kafka，换算营养后由 Flink 做按人按天的日汇总，结果放在 MySQL 和 Redis。宿舍里的 Ubuntu 负责数据湖：主动连接亚马逊，把同一份已经算好的数据拉进 Hadoop，供以后的 Spark 分析。营养只在亚马逊计算一次。
+
+Ubuntu 侧的配置、拉取脚本和 Hive 表在 [`ubuntu/README.md`](ubuntu/README.md)。下面先写亚马逊服务器。服务器上的代码是多模块工程，不是单一 Maven 父项目。
 
 ## 系统能做什么
 
@@ -70,6 +72,11 @@
 ├── scripts/data-import/           食物字典导入与补全脚本
 ├── docs/                          专题文档、压测计划和原始设计方案
 ├── start-flink-job.sh            等待 Flink 就绪后提交作业（防重复提交）
+├── ubuntu/                        宿舍 Ubuntu 上的 Hadoop 数据湖
+│   ├── flink/                     订阅 Kafka 写入 ODS，以及 Hive 容器
+│   ├── hdfs/                      NameNode
+│   ├── hive/lakehouse_full.sql    Hive 外部表
+│   └── scripts/                   Spark 全量覆盖，以及尚未跑完的回归脚本
 └── README.md                      项目总说明
 ```
 
@@ -438,3 +445,4 @@ curl -X POST http://127.0.0.1:8080/api/meal/record \
 | 流计算 | Apache Flink 1.17.2 |
 | 存储 | MySQL（明细 + 日汇总）、Redis（热汇总） |
 | 离线数据 | `data/diet_foods_extracted.csv`（NHANES 风格饮食记录） |
+| 数据湖 | 宿舍 Ubuntu 上的 HDFS、Hive、Spark，见 `ubuntu/` |

@@ -6,6 +6,7 @@
 !/meal-flink-job/
 !/user-profile-service/
 !/scripts/
+!/ubuntu/
 
 **/target/
 **/.mvn/

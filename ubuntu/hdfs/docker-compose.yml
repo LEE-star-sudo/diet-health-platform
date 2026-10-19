@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: hdfs_namenode
+    restart: always
+    network_mode: "host"
+    environment:
+      - CLUSTER_NAME=meal_lakehouse
+      - CORE_CONF_fs_defaultFS=hdfs://192.168.164.128:9000
+      - HDFS_CONF_dfs_replication=2
+    volumes:
+      - ./data/namenode:/hadoop/dfs/name
