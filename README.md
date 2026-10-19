@@ -1,12 +1,24 @@
-[中文](#饮食健康平台) | [English](#diet-health-platform)
+<a id="zh"></a>
+
+<div align="center">
 
 # 饮食健康平台
+
+实时打卡、营养换算，以及宿舍 Ubuntu 上的 Hadoop 数据湖
+
+[能做什么](#zh-what) · [架构](#zh-arch) · [目录](#zh-layout) · [模块](#zh-modules) · [数据表](#zh-tables) · [健康指标](#zh-metrics) · [启动](#zh-start) · [English](#en)
+
+**技术栈：** Spring Boot 4.1.1 · Java 17 · Kafka · Flink 1.17.2 · MySQL · Redis · HDFS · Hive · Spark
+
+</div>
 
 这个仓库是整个项目，包含两台机器。
 
 亚马逊服务器负责实时链路：用户通过 HTTP 上报吃了什么和多少克，Spring Boot 写入 Kafka，换算营养后由 Flink 做按人按天的日汇总，结果放在 MySQL 和 Redis。宿舍里的 Ubuntu 负责数据湖：主动连接亚马逊，把同一份已经算好的数据拉进 Hadoop，供以后的 Spark 分析。营养只在亚马逊计算一次。
 
 Ubuntu 侧的配置、拉取脚本和 Hive 表在 [`ubuntu/README.md`](ubuntu/README.md)。下面先写亚马逊服务器。服务器上的代码是多模块工程，不是单一 Maven 父项目。
+
+<a id="zh-what"></a>
 
 ## 系统能做什么
 
@@ -18,6 +30,8 @@ Ubuntu 侧的配置、拉取脚本和 Hive 表在 [`ubuntu/README.md`](ubuntu/RE
    - Redis Hash `daily:summary:{userId}:{statDate}`（TTL 2 天，便于实时查询）
 
 `data/` 里是 NHANES 2021–2023 的公开调查数据，只供学习、课程讨论和本项目的方法演示，不能当作医疗建议。来源和字段见 [`data/README.md`](data/README.md)。
+
+<a id="zh-arch"></a>
 
 ## 整体架构
 
@@ -45,6 +59,8 @@ Ubuntu 侧的配置、拉取脚本和 Hive 表在 [`ubuntu/README.md`](ubuntu/RE
                                v                 v
                     MySQL user_daily_summary   Redis daily:summary:*
 ```
+
+<a id="zh-layout"></a>
 
 ## 目录结构
 
@@ -81,6 +97,8 @@ Ubuntu 侧的配置、拉取脚本和 Hive 表在 [`ubuntu/README.md`](ubuntu/RE
 │   └── scripts/                   Spark 全量覆盖，以及尚未跑完的回归脚本
 └── README.md                      项目总说明
 ```
+
+<a id="zh-modules"></a>
 
 ## 模块说明
 
@@ -157,6 +175,8 @@ Flink 作业目前把 Kafka / MySQL / Redis 都写成 `localhost`。本环境中
 `data/diet_foods_extracted.csv` 有 100116 行、6751 名受访者，一行是一种食物。字段包括受访者编号、年龄、性别、种族、BMI、体重、身高、腰围、进食钟点、餐次、USDA 食物编码、食物名、克数，以及这一份的热量、碳水、蛋白质、总脂肪、总糖和钠。编号 130378–142310 对应 NHANES 2021 年 8 月至 2023 年 8 月的公开数据。它不直接进入实时链路，用来导入档案和食物字典，也作为离线分析样本。
 
 `data/nhanes/2021-2023/` 是同一周期从 CDC 下载的原始 XPT，包括体力活动、血压、血脂、血糖、糖化血红蛋白、睡眠、吸烟、饮酒和自报病史。官方链接和学习用途写在 [`data/README.md`](data/README.md)。
+
+<a id="zh-tables"></a>
 
 ## 数据表（diet_health）
 
@@ -325,6 +345,8 @@ Flink 按用户、按天累计后的分析结果，使用 `INSERT ... ON DUPLICA
 | `is_calorie_surplus` | tinyint(1) | 是否热量盈余。默认 0。当前 Flink SQL 不更新此列 |
 | `updated_at` | timestamp | 最近一次更新时间 |
 
+<a id="zh-metrics"></a>
+
 ## 健康指标怎么展示
 
 手机上看到的健康数字分三层。打卡流水保存吃进去的营养素；Flink 保存每天累计值；供能比、能量差额、HEI 分数和预测是下一步计算的展示结果。
@@ -374,6 +396,8 @@ DII 还要看胆固醇、反式脂肪和多种维生素、矿物质。这些没�
 | MySQL | 宿主机 `mysql-server` | `3306`，库 `diet_health` |
 
 Kafka 主题：`user_meal_event_stream`。
+
+<a id="zh-start"></a>
 
 ## 如何启动
 
@@ -454,15 +478,27 @@ curl -X POST http://127.0.0.1:8080/api/meal/record \
 
 ---
 
-[中文](#饮食健康平台) | [English](#diet-health-platform)
+<a id="en"></a>
+
+<div align="center">
 
 # Diet Health Platform
+
+Realtime intake and nutrient calculation, plus a Hadoop lakehouse on the dorm Ubuntu machine
+
+[What it does](#en-what) · [Architecture](#en-arch) · [Layout](#en-layout) · [Modules](#en-modules) · [Tables](#en-tables) · [Health figures](#en-metrics) · [Start](#en-start) · [中文](#zh)
+
+**Stack:** Spring Boot 4.1.1 · Java 17 · Kafka · Flink 1.17.2 · MySQL · Redis · HDFS · Hive · Spark
+
+</div>
 
 This repository is the whole project and covers two machines.
 
 The Amazon server runs the realtime path. A user reports what was eaten and how many grams over HTTP. Spring Boot writes that event to Kafka. After the nutrients are calculated, Flink builds a per-person, per-day summary and stores it in MySQL and Redis. The Ubuntu machine in the dorm runs the data lake. It connects out to Amazon and pulls the already calculated data into Hadoop for later Spark analysis. Nutrition is calculated once, on Amazon.
 
 The Ubuntu configuration, pull scripts, and Hive tables are in [`ubuntu/README.md`](ubuntu/README.md). The Amazon server is described first. Its code is a multi-module workspace, not one Maven parent project.
+
+<a id="en-what"></a>
 
 ## What the system does
 
@@ -474,6 +510,8 @@ The Ubuntu configuration, pull scripts, and Hive tables are in [`ubuntu/README.m
    - Redis hash `daily:summary:{userId}:{statDate}` (TTL 2 days, for realtime reads)
 
 `data/` holds public NHANES 2021–2023 survey files for learning, classroom discussion, and method demonstrations in this project. They are not medical advice. Sources and columns are in [`data/README.md`](data/README.md).
+
+<a id="en-arch"></a>
 
 ## Architecture
 
@@ -501,6 +539,8 @@ Client / test tool
                                v                 v
                     MySQL user_daily_summary   Redis daily:summary:*
 ```
+
+<a id="en-layout"></a>
 
 ## Layout
 
@@ -537,6 +577,8 @@ Client / test tool
 │   └── scripts/                   Spark full overwrite, and a regression script that has not produced a model
 └── README.md                      This document
 ```
+
+<a id="en-modules"></a>
 
 ## Modules
 
@@ -613,6 +655,8 @@ The Flink job currently uses `localhost` for Kafka, MySQL, and Redis. In this en
 `data/diet_foods_extracted.csv` has 100,116 rows and 6,751 respondents. One row is one food. Columns are respondent id, age, sex, race or ethnicity, BMI, weight, height, waist, clock time, meal, USDA food code, food name, grams, and that portion's energy, carbohydrate, protein, total fat, total sugar, and sodium. Respondent ids 130378–142310 are the public NHANES release for August 2021 through August 2023. The file is not on the realtime path. It is used to import profiles and the food dictionary, and it is also an offline analysis sample.
 
 `data/nhanes/2021-2023/` holds the original XPT files downloaded from the CDC for the same cycle: physical activity, blood pressure, lipids, glucose, glycated hemoglobin, sleep, smoking, alcohol, and self-reported medical conditions. Official links and the learning-use note are in [`data/README.md`](data/README.md).
+
+<a id="en-tables"></a>
 
 ## Tables (diet_health)
 
@@ -781,6 +825,8 @@ Primary key: `id`. Unique key: `(user_id, stat_date)`. There is also an index on
 | `is_calorie_surplus` | tinyint(1) | Whether energy intake exceeded expenditure. Default 0. The current Flink SQL does not update this column |
 | `updated_at` | timestamp | Last update time |
 
+<a id="en-metrics"></a>
+
 ## How health figures are shown
 
 The numbers on the phone have three layers. The check-in log stores nutrients eaten. Flink stores the day's running totals. Energy shares, the energy gap, the HEI score, and predictions are display results for a later step.
@@ -830,6 +876,8 @@ These have been run with Docker on the server:
 | MySQL | host `mysql-server` | `3306`, database `diet_health` |
 
 Kafka topic: `user_meal_event_stream`.
+
+<a id="en-start"></a>
 
 ## How to start
 
