@@ -6,18 +6,37 @@
 
 宿舍网络是内网，亚马逊连不进来。这台机器主动连接公网 `REDACTED_HOST`。
 
-```text
-手机
-  → 亚马逊 meal-service
-  → Kafka user_meal_event_stream
-       ├→ MySQL user_food_intake
-       └→ 换算后写入 user_food_nutrition，再发到 user_food_nutrition_stream
-            → 亚马逊 Flink → MySQL user_daily_summary
+```mermaid
+flowchart TD
+    subgraph amazon["亚马逊服务器"]
+        kafka["Kafka<br/>两个主题"]
+        mysql[("MySQL 五张表<br/>档案 · 字典 · 打卡 · 营养 · 日汇总")]
+    end
 
-宿舍 Ubuntu
-  Flink SQL：两个 Kafka 主题 → HDFS 两张 ODS 流水表
-  Spark：MySQL 五张表 → HDFS 五张全量表（手动执行）
-  Hive：库 lakehouse_db，给这些 HDFS 目录起表名
+    subgraph ubuntu["宿舍 Ubuntu 数据湖"]
+        lakeFlink["Flink SQL<br/>只接新消息"]
+        spark["Spark<br/>手动整表覆盖"]
+        ods[("HDFS ODS<br/>打卡流水 · 营养流水")]
+        full[("HDFS<br/>DIM 两张 · DWD 三张")]
+        hive["Hive<br/>lakehouse_db"]
+        lakeFlink --> ods
+        spark --> full
+        ods --> hive
+        full --> hive
+    end
+
+    kafka --> lakeFlink
+    mysql --> spark
+
+    classDef queue fill:#fff4e5,stroke:#d97706,color:#7c4a03
+    classDef store fill:#e8f8ef,stroke:#1f9d55,color:#145239
+    classDef lake fill:#efe9ff,stroke:#7c3aed,color:#3b1d6e
+    classDef hdfs fill:#e6f7f7,stroke:#0f766e,color:#134e4a
+
+    class kafka queue
+    class mysql store
+    class lakeFlink,spark,hive lake
+    class ods,full hdfs
 ```
 
 ## 目录
@@ -111,18 +130,37 @@ This is the analysis side on the dorm LAN. The host is `192.168.164.128` and the
 
 The dorm network is private. Amazon cannot connect in. This machine connects out to `REDACTED_HOST`.
 
-```text
-Phone
-  → Amazon meal-service
-  → Kafka user_meal_event_stream
-       ├→ MySQL user_food_intake
-       └→ converted into user_food_nutrition, then published to user_food_nutrition_stream
-            → Amazon Flink → MySQL user_daily_summary
+```mermaid
+flowchart TD
+    subgraph amazon["Amazon server"]
+        kafka["Kafka<br/>two topics"]
+        mysql[("MySQL, five tables<br/>profile · dictionary · intake · nutrition · daily summary")]
+    end
 
-Dorm Ubuntu
-  Flink SQL: two Kafka topics → two ODS event tables on HDFS
-  Spark: five MySQL tables → five full tables on HDFS (run by hand)
-  Hive: database lakehouse_db, names for those HDFS directories
+    subgraph ubuntu["Dorm Ubuntu data lake"]
+        lakeFlink["Flink SQL<br/>new messages only"]
+        spark["Spark<br/>full overwrite, run by hand"]
+        ods[("HDFS ODS<br/>meal events · nutrition events")]
+        full[("HDFS<br/>two DIM · three DWD")]
+        hive["Hive<br/>lakehouse_db"]
+        lakeFlink --> ods
+        spark --> full
+        ods --> hive
+        full --> hive
+    end
+
+    kafka --> lakeFlink
+    mysql --> spark
+
+    classDef queue fill:#fff4e5,stroke:#d97706,color:#7c4a03
+    classDef store fill:#e8f8ef,stroke:#1f9d55,color:#145239
+    classDef lake fill:#efe9ff,stroke:#7c3aed,color:#3b1d6e
+    classDef hdfs fill:#e6f7f7,stroke:#0f766e,color:#134e4a
+
+    class kafka queue
+    class mysql store
+    class lakeFlink,spark,hive lake
+    class ods,full hdfs
 ```
 
 ## Layout

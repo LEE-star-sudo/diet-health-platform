@@ -39,32 +39,59 @@ The Ubuntu configuration, pull scripts, and Hive tables are in [`ubuntu/README.m
 
 ```mermaid
 flowchart TD
-    phone["Phone / test tool"] --> api["POST /api/meal/record"]
-    api --> meal["meal-service<br/>Spring Boot :8080"]
-    meal --> kafka["Kafka<br/>user_meal_event_stream"]
+    subgraph amazon["Amazon server"]
+        phone["Phone / test tool"] --> api["POST /api/meal/record"]
+        api --> meal["meal-service<br/>Spring Boot :8080"]
+        meal --> kafka["Kafka<br/>user_meal_event_stream"]
+        kafka --> detail["MealConsumer<br/>detail"]
+        kafka --> convert["NutritionConsumer<br/>nutrient conversion"]
+        detail --> intake[("MySQL<br/>user_food_intake")]
+        convert --> nutrition[("MySQL<br/>user_food_nutrition")]
+        convert --> outbox["nutrition_outbox"]
+        outbox --> kafka2["Kafka<br/>user_food_nutrition_stream"]
+        kafka2 --> flink["Amazon Flink<br/>daily summary"]
+        flink --> daily[("MySQL<br/>user_daily_summary")]
+        flink --> redis[("Redis<br/>daily:summary")]
+        register["user-profile-service<br/>registration"] --> profile[("MySQL<br/>user_profile")]
+        dict[("MySQL<br/>food_nutrition_dict")]
+    end
 
-    kafka --> detail["MealConsumer<br/>detail"]
-    kafka --> convert["NutritionConsumer<br/>nutrient conversion"]
+    subgraph ubuntu["Dorm Ubuntu data lake"]
+        lakeFlink["Flink SQL<br/>both Kafka topics"]
+        spark["Spark<br/>full overwrite of five tables"]
+        ods[("HDFS ODS<br/>meal events · nutrition events")]
+        full[("HDFS<br/>two DIM · three DWD")]
+        hive["Hive<br/>lakehouse_db"]
+        lakeFlink --> ods
+        spark --> full
+        ods --> hive
+        full --> hive
+    end
 
-    detail --> intake[("MySQL<br/>user_food_intake")]
-
-    convert --> nutrition[("MySQL<br/>user_food_nutrition")]
-    convert --> outbox["nutrition_outbox"]
-    outbox --> kafka2["Kafka<br/>user_food_nutrition_stream"]
-    kafka2 --> flink["Flink<br/>NutritionDailySummaryJob"]
-    flink --> daily[("MySQL<br/>user_daily_summary")]
-    flink --> redis[("Redis<br/>daily:summary")]
+    kafka -->|"new messages only"| lakeFlink
+    kafka2 -->|"new messages only"| lakeFlink
+    profile --> spark
+    dict --> spark
+    intake --> spark
+    nutrition --> spark
+    daily --> spark
 
     classDef entry fill:#e8f1ff,stroke:#3b82f6,color:#1e3a5f
     classDef queue fill:#fff4e5,stroke:#d97706,color:#7c4a03
     classDef calc fill:#fde8ef,stroke:#e6526f,color:#7a2438
     classDef store fill:#e8f8ef,stroke:#1f9d55,color:#145239
+    classDef lake fill:#efe9ff,stroke:#7c3aed,color:#3b1d6e
+    classDef hdfs fill:#e6f7f7,stroke:#0f766e,color:#134e4a
 
-    class phone,api,meal entry
+    class phone,api,meal,register entry
     class kafka,kafka2 queue
     class detail,convert,outbox,flink calc
-    class intake,nutrition,daily,redis store
+    class intake,nutrition,daily,redis,profile,dict store
+    class lakeFlink,spark,hive lake
+    class ods,full hdfs
 ```
+
+The dorm machine connects out to Amazon. Purple is the data lake: Flink writes new messages from both Kafka topics into ODS, and Spark copies the profile, food dictionary, intake, nutrition, and daily summary from MySQL onto HDFS. Nutrition is not calculated again on Ubuntu. Details are in [`ubuntu/README.md`](ubuntu/README.md).
 
 <a id="en-layout"></a>
 

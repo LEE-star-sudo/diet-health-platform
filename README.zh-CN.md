@@ -39,32 +39,59 @@ Ubuntu 侧的配置、拉取脚本和 Hive 表在 [`ubuntu/README.md`](ubuntu/RE
 
 ```mermaid
 flowchart TD
-    phone["手机 / 测试工具"] --> api["POST /api/meal/record"]
-    api --> meal["meal-service<br/>Spring Boot :8080"]
-    meal --> kafka["Kafka<br/>user_meal_event_stream"]
+    subgraph amazon["亚马逊服务器"]
+        phone["手机 / 测试工具"] --> api["POST /api/meal/record"]
+        api --> meal["meal-service<br/>Spring Boot :8080"]
+        meal --> kafka["Kafka<br/>user_meal_event_stream"]
+        kafka --> detail["MealConsumer<br/>明细"]
+        kafka --> convert["NutritionConsumer<br/>营养换算"]
+        detail --> intake[("MySQL<br/>user_food_intake")]
+        convert --> nutrition[("MySQL<br/>user_food_nutrition")]
+        convert --> outbox["nutrition_outbox"]
+        outbox --> kafka2["Kafka<br/>user_food_nutrition_stream"]
+        kafka2 --> flink["亚马逊 Flink<br/>日汇总"]
+        flink --> daily[("MySQL<br/>user_daily_summary")]
+        flink --> redis[("Redis<br/>daily:summary")]
+        register["user-profile-service<br/>注册"] --> profile[("MySQL<br/>user_profile")]
+        dict[("MySQL<br/>food_nutrition_dict")]
+    end
 
-    kafka --> detail["MealConsumer<br/>明细"]
-    kafka --> convert["NutritionConsumer<br/>营养换算"]
+    subgraph ubuntu["宿舍 Ubuntu 数据湖"]
+        lakeFlink["Flink SQL<br/>订阅两个 Kafka 主题"]
+        spark["Spark<br/>五张表整表覆盖"]
+        ods[("HDFS ODS<br/>打卡流水 · 营养流水")]
+        full[("HDFS<br/>DIM 两张 · DWD 三张")]
+        hive["Hive<br/>lakehouse_db"]
+        lakeFlink --> ods
+        spark --> full
+        ods --> hive
+        full --> hive
+    end
 
-    detail --> intake[("MySQL<br/>user_food_intake")]
-
-    convert --> nutrition[("MySQL<br/>user_food_nutrition")]
-    convert --> outbox["nutrition_outbox"]
-    outbox --> kafka2["Kafka<br/>user_food_nutrition_stream"]
-    kafka2 --> flink["Flink<br/>NutritionDailySummaryJob"]
-    flink --> daily[("MySQL<br/>user_daily_summary")]
-    flink --> redis[("Redis<br/>daily:summary")]
+    kafka -->|"只接新消息"| lakeFlink
+    kafka2 -->|"只接新消息"| lakeFlink
+    profile --> spark
+    dict --> spark
+    intake --> spark
+    nutrition --> spark
+    daily --> spark
 
     classDef entry fill:#e8f1ff,stroke:#3b82f6,color:#1e3a5f
     classDef queue fill:#fff4e5,stroke:#d97706,color:#7c4a03
     classDef calc fill:#fde8ef,stroke:#e6526f,color:#7a2438
     classDef store fill:#e8f8ef,stroke:#1f9d55,color:#145239
+    classDef lake fill:#efe9ff,stroke:#7c3aed,color:#3b1d6e
+    classDef hdfs fill:#e6f7f7,stroke:#0f766e,color:#134e4a
 
-    class phone,api,meal entry
+    class phone,api,meal,register entry
     class kafka,kafka2 queue
     class detail,convert,outbox,flink calc
-    class intake,nutrition,daily,redis store
+    class intake,nutrition,daily,redis,profile,dict store
+    class lakeFlink,spark,hive lake
+    class ods,full hdfs
 ```
+
+宿舍这台机器主动连到亚马逊。紫色是数据湖：Flink 把两个 Kafka 主题的新消息写成 ODS 流水，Spark 把 MySQL 里的档案、字典、打卡、营养和日汇总整表覆盖到 HDFS。营养不在 Ubuntu 重算。细节在 [`ubuntu/README.md`](ubuntu/README.md)。
 
 <a id="zh-layout"></a>
 
